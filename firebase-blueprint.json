@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile details",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email"]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "Saved student/participant name list",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "names": { "type": "array", "items": { "type": "string" } },
+        "lastModified": { "type": "string" }
+      },
+      "required": ["userId", "name", "names"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account document"
+    },
+    "/users/{userId}/classrooms/{classroomId}": {
+      "schema": "Classroom",
+      "description": "User's saved classroom lists"
+    }
+  }
+}

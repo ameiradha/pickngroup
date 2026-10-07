@@ -1,0 +1,6 @@
+{
+  "name": "Name Picker",
+  "description": "A playful, fast, and highly customizable random name picker with a spinning wheel, dynamic group sorter, custom colors, sounds, and cloud-synced classroom lists.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
