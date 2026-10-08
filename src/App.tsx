@@ -81,6 +81,7 @@ export default function App() {
   const [isConfettiActive, setIsConfettiActive] = useState(false);
   const [isClassroomOpen, setIsClassroomOpen] = useState(false);
   const [activeMode, setActiveMode] = useState<'wheel' | 'sorter'>('wheel');
+  const [sorterFullWidth, setSorterFullWidth] = useState<boolean>(false);
 
 
   // Sync to local storage
@@ -253,11 +254,11 @@ export default function App() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch flex-1">
-          {/* Left Column: Big Interactive Canvas focus */}
-          <div className="lg:col-span-7 flex flex-col bg-white rounded-3xl border border-slate-200/60 p-6 sm:p-8 shadow-xs relative overflow-hidden min-h-[480px]">
+        <div className={`grid grid-cols-1 ${activeMode === 'sorter' && sorterFullWidth ? 'lg:grid-cols-1' : 'lg:grid-cols-12'} gap-8 items-stretch flex-1`}>
+          {/* Main Interactive Canvas / Workspace */}
+          <div className={`${activeMode === 'sorter' && sorterFullWidth ? 'lg:col-span-1' : 'lg:col-span-7 xl:col-span-8'} flex flex-col bg-white rounded-3xl border border-slate-200/60 p-5 sm:p-7 shadow-xs relative min-h-[480px]`}>
             {activeMode === 'wheel' ? (
-              <div className="flex-1 flex flex-col justify-center items-center h-full">
+              <div className="flex-1 flex flex-col justify-center items-center h-full overflow-hidden">
                 <div className="absolute top-4 left-4 flex items-center gap-1.5 select-none opacity-45">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                   <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Active Wheel Canvas</span>
@@ -272,23 +273,25 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div className="flex-1 flex flex-col pt-4">
-                <div className="absolute top-4 left-4 flex items-center gap-1.5 select-none opacity-45">
+              <div className="flex-1 flex flex-col pt-2">
+                <div className="flex items-center gap-1.5 select-none opacity-50 mb-3">
                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Group Sorter Panel</span>
+                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Panel Susun Kumpulan / Group Sorter</span>
                 </div>
                 
                 <GroupSorter
                   names={cleanNames}
                   onChangeNames={setNamesText}
                   isSpinning={isSpinning}
+                  isFullWidth={sorterFullWidth}
+                  onToggleFullWidth={() => setSorterFullWidth(prev => !prev)}
                 />
               </div>
             )}
           </div>
 
-          {/* Right Column: Clean Names Entries panel without cluttered permanent manager */}
-          <div className="lg:col-span-5 flex flex-col h-full">
+          {/* Clean Names Entries panel */}
+          <div className={`${activeMode === 'sorter' && sorterFullWidth ? 'lg:col-span-1' : 'lg:col-span-5 xl:col-span-4'} flex flex-col h-full`}>
             <Entries
               value={namesText}
               onChange={setNamesText}
