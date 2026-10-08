@@ -42,7 +42,17 @@ export default function Wheel({
     if (!container) return;
 
     const updateDimensions = () => {
-      const size = Math.min(container.clientWidth, 600);
+      const container = containerRef.current;
+      if (!container) return;
+
+      const parent = container.parentElement;
+      const availableW = container.clientWidth || 360;
+      const availableH = parent && parent.clientHeight > 100 ? parent.clientHeight : (container.clientHeight || 450);
+
+      // Reserve space for the Spin CTA button & tip (~85px)
+      const maxH = Math.max(180, availableH - 90);
+      const maxW = Math.max(180, availableW - 16);
+      const size = Math.max(180, Math.min(maxW, maxH, 560));
       setDimensions({ width: size, height: size });
     };
 
@@ -52,9 +62,14 @@ export default function Wheel({
       updateDimensions();
     });
     resizeObserver.observe(container);
+    if (container.parentElement) {
+      resizeObserver.observe(container.parentElement);
+    }
+    window.addEventListener('resize', updateDimensions);
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
     };
   }, []);
 
@@ -465,10 +480,10 @@ export default function Wheel({
   return (
     <div
       ref={containerRef}
-      className="flex flex-col items-center justify-center relative select-none w-full max-w-full"
+      className="flex-1 w-full h-full min-h-0 flex flex-col items-center justify-center relative select-none"
     >
       <div
-        className={`relative cursor-pointer transition-transform duration-300 ${
+        className={`relative cursor-pointer transition-transform duration-300 shrink-0 ${
           isSpinning ? 'scale-[1.01]' : 'hover:scale-[1.02]'
         }`}
         onClick={handleWheelClick}
@@ -491,25 +506,25 @@ export default function Wheel({
       </div>
 
       {/* Under-wheel Spin CTA */}
-      <div className="mt-4 flex flex-col items-center gap-2">
+      <div className="mt-2 sm:mt-3 flex flex-col items-center gap-1 shrink-0">
         <button
           onClick={handleWheelClick}
           disabled={isSpinning || names.length === 0}
-          className={`px-12 py-4 rounded-full font-bold text-lg tracking-wide shadow-lg transition-all duration-300 transform flex items-center gap-2.5 ${
+          className={`px-8 sm:px-12 py-2 sm:py-3 rounded-full font-black text-base sm:text-lg tracking-wide shadow-md hover:shadow-lg transition-all duration-200 transform flex items-center gap-2 cursor-pointer ${
             names.length === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
               : isSpinning
               ? 'bg-blue-100 text-blue-500 cursor-wait'
-              : 'bg-blue-600 text-white hover:bg-blue-500 active:scale-95 shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30'
+              : 'bg-blue-600 text-white hover:bg-blue-500 active:scale-95 shadow-blue-500/25 hover:shadow-blue-500/35'
           }`}
           id="btn-main-spin"
         >
-          <Sparkles className={`w-5 h-5 ${isSpinning ? 'animate-spin' : ''}`} />
-          <span>{isSpinning ? 'Spinning...' : 'SPIN THE WHEEL'}</span>
+          <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${isSpinning ? 'animate-spin' : ''}`} />
+          <span>{isSpinning ? 'Memutar...' : 'PUTAR RODA'}</span>
         </button>
-        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 select-none">
-          <span>Tip: Click wheel, press button, or press</span>
-          <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border text-[10px] font-semibold text-gray-500">
+        <p className="text-[10px] sm:text-[11px] text-gray-400 flex items-center gap-1 select-none">
+          <span>Tip: Klik roda, butang putar, atau</span>
+          <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border text-[9px] sm:text-[10px] font-semibold text-gray-500">
             Ctrl + Enter
           </kbd>
         </p>

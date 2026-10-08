@@ -18,7 +18,7 @@ export default function Header({
   const { user } = useAuth();
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 sm:px-8 bg-white border-b border-slate-200 sticky top-0 z-40 select-none">
+    <header className="h-13 sm:h-14 flex items-center justify-between px-3 sm:px-5 md:px-6 bg-white border-b border-slate-200 sticky top-0 z-40 select-none w-full shrink-0">
       {/* Brand Logo & Title */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg relative overflow-hidden">

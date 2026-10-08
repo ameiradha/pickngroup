@@ -203,9 +203,9 @@ export default function App() {
   const cleanNames = getNamesArray();
 
   return (
-    <div className="min-h-screen bg-slate-50/60 font-sans text-gray-800 flex flex-col selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen md:h-screen md:max-h-screen md:overflow-hidden bg-slate-50/60 font-sans text-gray-800 flex flex-col selection:bg-blue-100 selection:text-blue-900">
       {/* Background visual soft details */}
-      <div className="absolute top-0 left-0 right-0 h-[480px] bg-linear-to-b from-blue-50/30 via-transparent to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-0 left-0 right-0 h-[380px] bg-linear-to-b from-blue-50/30 via-transparent to-transparent pointer-events-none -z-10" />
 
       {/* Persistent Confetti Overlay */}
       <Confetti active={isConfettiActive} duration={3500} />
@@ -218,50 +218,52 @@ export default function App() {
         historyCount={history.length}
       />
 
-      {/* Main Grid content wrapper for Dynamic Interactive Activity Workspace */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+      {/* Main Grid content wrapper: Full Width Edge-to-Edge with Viewport Fit on Tablet */}
+      <main className="flex-1 min-h-0 w-full max-w-full px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
         
         {/* Activity Mode Segmented Control Tab Bar */}
-        <div className="flex items-center justify-between bg-white border border-slate-200/60 rounded-2xl p-3.5 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-            <h2 className="text-xs font-black text-slate-800 tracking-tight uppercase">Class Activity:</h2>
-            <p className="text-[11px] text-slate-400 font-medium">Switch seamlessly between picking single names or sorting the class into groups</p>
+        <div className="flex items-center justify-between bg-white border border-slate-200/70 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 shadow-2xs shrink-0 w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <h2 className="text-xs font-black text-slate-800 tracking-tight uppercase">Mod Aktiviti:</h2>
+            <p className="text-[11px] text-slate-400 font-medium hidden sm:inline">Pilih seorang murid atau susun murid ke dalam kumpulan</p>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl shrink-0">
+          <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg sm:rounded-xl shrink-0">
             <button
               onClick={() => setActiveMode('wheel')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold rounded-md sm:rounded-lg transition-all cursor-pointer ${
                 activeMode === 'wheel'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/60'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Spin Wheel</span>
+              <span>Putar Roda</span>
             </button>
             <button
               onClick={() => setActiveMode('sorter')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold rounded-md sm:rounded-lg transition-all cursor-pointer ${
                 activeMode === 'sorter'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/60'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Group Sorter</span>
+              <span>Susun Kumpulan</span>
             </button>
           </div>
         </div>
 
-        <div className={`grid grid-cols-1 ${activeMode === 'sorter' && sorterFullWidth ? 'lg:grid-cols-1' : 'lg:grid-cols-12'} gap-8 items-stretch flex-1`}>
-          {/* Main Interactive Canvas / Workspace */}
-          <div className={`${activeMode === 'sorter' && sorterFullWidth ? 'lg:col-span-1' : 'lg:col-span-7 xl:col-span-8'} flex flex-col bg-white rounded-3xl border border-slate-200/60 p-5 sm:p-7 shadow-xs relative min-h-[480px]`}>
+        {/* Dynamic 2-column or full-width workspace (side-by-side on tablet md:) */}
+        <div className={`grid grid-cols-1 ${activeMode === 'sorter' && sorterFullWidth ? 'md:grid-cols-1' : 'md:grid-cols-12'} gap-2.5 sm:gap-3.5 items-stretch flex-1 min-h-0 w-full`}>
+          {/* Main Interactive Canvas / Workspace (Left Column) */}
+          <div className={`${activeMode === 'sorter' && sorterFullWidth ? 'md:col-span-1' : 'md:col-span-7 lg:col-span-8'} flex flex-col bg-white rounded-2xl md:rounded-3xl border border-slate-200/70 p-3 sm:p-4 shadow-xs relative min-h-0 overflow-hidden`}>
             {activeMode === 'wheel' ? (
-              <div className="flex-1 flex flex-col justify-center items-center h-full overflow-hidden">
-                <div className="absolute top-4 left-4 flex items-center gap-1.5 select-none opacity-45">
+              <div className="flex-1 w-full h-full min-h-0 flex flex-col justify-center items-center overflow-hidden relative">
+                <div className="absolute top-1 left-1 sm:top-2 sm:left-2 flex items-center gap-1.5 select-none opacity-45">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Active Wheel Canvas</span>
+                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Roda Nama Aktif</span>
                 </div>
                 
                 <Wheel
@@ -273,12 +275,7 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div className="flex-1 flex flex-col pt-2">
-                <div className="flex items-center gap-1.5 select-none opacity-50 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Panel Susun Kumpulan / Group Sorter</span>
-                </div>
-                
+              <div className="flex-1 w-full h-full min-h-0 flex flex-col overflow-hidden">
                 <GroupSorter
                   names={cleanNames}
                   onChangeNames={setNamesText}
@@ -290,21 +287,22 @@ export default function App() {
             )}
           </div>
 
-          {/* Clean Names Entries panel */}
-          <div className={`${activeMode === 'sorter' && sorterFullWidth ? 'lg:col-span-1' : 'lg:col-span-5 xl:col-span-4'} flex flex-col h-full`}>
-            <Entries
-              value={namesText}
-              onChange={setNamesText}
-              isSpinning={isSpinning}
-              onUploadCenterImage={handleUploadCenterImage}
-              centerImage={settings.centerImage}
-              onOpenCustomize={() => setIsCustomizeOpen(true)}
-              onOpenClassrooms={() => setIsClassroomOpen(true)}
-            />
-          </div>
+          {/* Clean Names Entries panel (Right Column) */}
+          {(!sorterFullWidth || activeMode === 'wheel') && (
+            <div className="md:col-span-5 lg:col-span-4 flex flex-col h-full min-h-0">
+              <Entries
+                value={namesText}
+                onChange={setNamesText}
+                isSpinning={isSpinning}
+                onUploadCenterImage={handleUploadCenterImage}
+                centerImage={settings.centerImage}
+                onOpenCustomize={() => setIsCustomizeOpen(true)}
+                onOpenClassrooms={() => setIsClassroomOpen(true)}
+              />
+            </div>
+          )}
         </div>
       </main>
-
 
       {/* Modals & Popups Overlays */}
       <ClassroomModal
@@ -338,10 +336,10 @@ export default function App() {
         onRemoveWinner={handleRemoveWinnerAction}
       />
 
-      {/* Sticky Quick-Tip Footer */}
-      <footer className="py-6 border-t border-gray-100 text-center text-xs text-gray-400 select-none">
-        <p className="font-semibold">Name Picker — Randomized decision making made fast and simple.</p>
-        <p className="mt-1 text-[10px] opacity-75">All selections are securely saved locally inside your browser.</p>
+      {/* Slim Quick-Tip Footer */}
+      <footer className="h-6 sm:h-7 shrink-0 px-4 border-t border-slate-100 bg-white/70 flex items-center justify-between text-[11px] text-slate-400 select-none">
+        <p className="font-semibold truncate">Name Picker & Group Sorter</p>
+        <p className="text-[10px] opacity-75 truncate">Disimpan secara automatik</p>
       </footer>
     </div>
   );

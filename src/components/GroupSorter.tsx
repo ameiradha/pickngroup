@@ -323,9 +323,9 @@ export default function GroupSorter({
   };
 
   return (
-    <div className="w-full flex flex-col gap-5" id="group-sorter-container">
+    <div className="w-full flex flex-col gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pr-0.5" id="group-sorter-container">
       {/* Sorter Controls Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col gap-3 shrink-0">
         
         {/* Top Control Bar: Group Counts, Status, & Actions */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
