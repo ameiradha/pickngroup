@@ -3,8 +3,9 @@ import {
   Users, Shuffle, Copy, Check, Plus, Minus, ArrowLeftRight, Trash2, 
   Sparkles, Download, Edit2, CheckCircle2, AlertCircle, Maximize2, 
   Minimize2, LayoutGrid, Columns3, ListFilter, UserPlus, Printer, 
-  Layers, Search
+  Layers, Search, FileDown, Loader2
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 
 export interface GroupMember {
   id: string;
@@ -40,6 +41,7 @@ export default function GroupSorter({
   const [groups, setGroups] = useState<Group[]>([]);
   const [isSorting, setIsSorting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [tempGroupName, setTempGroupName] = useState('');
   
@@ -274,6 +276,298 @@ export default function GroupSorter({
     window.print();
   };
 
+  // Helper to render one group per A4 portrait page
+  const renderGroupPage = (
+    doc: jsPDF, 
+    group: Group, 
+    groupIndex: number, 
+    totalGroups: number
+  ) => {
+    const formattedDate = new Date().toLocaleDateString('ms-MY', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const marginX = 14;
+    const usableWidth = 182; // 210mm - (14 * 2)
+
+    // Top Header Banner
+    doc.setFillColor(37, 99, 235); // Blue-600
+    doc.roundedRect(marginX, 12, usableWidth, 16, 2.5, 2.5, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('SENARAI NAMA MURID MENGIKUT KUMPULAN', marginX + 6, 22.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.text(`Tarikh: ${formattedDate}`, marginX + usableWidth - 6, 22.5, { align: 'right' });
+
+    // Group Information Box
+    const groupCardY = 32;
+    const groupCardHeight = 22;
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.4);
+    doc.roundedRect(marginX, groupCardY, usableWidth, groupCardHeight, 3, 3, 'FD');
+
+    // Accent line on left of card
+    const accentColors: [number, number, number][] = [
+      [37, 99, 235],   // blue
+      [16, 185, 129],  // emerald
+      [225, 29, 72],   // rose
+      [217, 119, 6],   // amber
+      [147, 51, 234],  // purple
+      [8, 145, 178],   // cyan
+      [192, 38, 211],  // fuchsia
+      [13, 148, 136]   // teal
+    ];
+    const accent = accentColors[groupIndex % accentColors.length];
+    doc.setFillColor(accent[0], accent[1], accent[2]);
+    doc.roundedRect(marginX, groupCardY, 4, groupCardHeight, 2, 2, 'F');
+
+    // Group Title text
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    const groupTitle = (group.name || `KUMPULAN ${groupIndex + 1}`).toUpperCase();
+    doc.text(groupTitle, marginX + 9, groupCardY + 9.5);
+
+    // Group Subtitle
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(`Kumpulan #${groupIndex + 1} daripada ${totalGroups} kumpulan  •  Jumlah Keseluruhan: ${group.members.length} Murid`, marginX + 9, groupCardY + 16.5);
+
+    // Pill badge on the right
+    const badgeWidth = 44;
+    const badgeHeight = 12;
+    const badgeX = marginX + usableWidth - badgeWidth - 5;
+    const badgeY = groupCardY + 5;
+    doc.setFillColor(239, 246, 255); // blue-50
+    doc.setDrawColor(191, 219, 254); // blue-200
+    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 2, 2, 'FD');
+    doc.setTextColor(29, 78, 216); // blue-700
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(`${group.members.length} ORANG MURID`, badgeX + (badgeWidth / 2), badgeY + 8, { align: 'center' });
+
+    // Table Content
+    const tableStartY = 58;
+    const membersCount = group.members.length;
+
+    if (membersCount === 0) {
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(marginX, tableStartY, usableWidth, 40, 3, 3, 'FD');
+      doc.setTextColor(148, 163, 184);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(10);
+      doc.text('(Tiada murid dalam kumpulan ini)', marginX + (usableWidth / 2), tableStartY + 22, { align: 'center' });
+    } else if (membersCount <= 16) {
+      // SINGLE-COLUMN TABLE (Generous spacing, perfectly fitted on 1 A4 portrait page)
+      const colBilWidth = 16;
+      const colCatatanWidth = 46;
+      const colNamaWidth = usableWidth - colBilWidth - colCatatanWidth;
+
+      // Header row
+      const headerHeight = 9;
+      doc.setFillColor(241, 245, 249); // slate-100
+      doc.setDrawColor(203, 213, 225); // slate-300
+      doc.rect(marginX, tableStartY, usableWidth, headerHeight, 'FD');
+
+      doc.setTextColor(51, 65, 85); // slate-700
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('BIL', marginX + (colBilWidth / 2), tableStartY + 6, { align: 'center' });
+      doc.text('NAMA PENUH MURID', marginX + colBilWidth + 5, tableStartY + 6);
+      doc.text('CATATAN / KEHADIRAN', marginX + colBilWidth + colNamaWidth + (colCatatanWidth / 2), tableStartY + 6, { align: 'center' });
+
+      // Rows
+      const availableTableHeight = 212;
+      const rowHeight = Math.min(12, Math.max(8.5, availableTableHeight / Math.max(membersCount, 12)));
+
+      group.members.forEach((member, mIdx) => {
+        const rowY = tableStartY + headerHeight + (mIdx * rowHeight);
+        
+        // Alternating background
+        if (mIdx % 2 === 0) {
+          doc.setFillColor(255, 255, 255);
+        } else {
+          doc.setFillColor(248, 250, 252);
+        }
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(marginX, rowY, usableWidth, rowHeight, 'FD');
+
+        // Column dividers
+        doc.line(marginX + colBilWidth, rowY, marginX + colBilWidth, rowY + rowHeight);
+        doc.line(marginX + colBilWidth + colNamaWidth, rowY, marginX + colBilWidth + colNamaWidth, rowY + rowHeight);
+
+        // Number
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(String(mIdx + 1), marginX + (colBilWidth / 2), rowY + (rowHeight / 2) + 2.5, { align: 'center' });
+
+        // Pupil Name
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        const safeName = doc.splitTextToSize(member.name, colNamaWidth - 8)[0] || member.name;
+        doc.text(safeName, marginX + colBilWidth + 5, rowY + (rowHeight / 2) + 2.5);
+
+        // Checkbox square in Catatan column
+        const boxSize = 4.2;
+        const boxX = marginX + colBilWidth + colNamaWidth + 10;
+        const boxY = rowY + (rowHeight / 2) - (boxSize / 2);
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+        doc.rect(boxX, boxY, boxSize, boxSize);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Hadir', boxX + boxSize + 3, rowY + (rowHeight / 2) + 2.5);
+      });
+    } else {
+      // TWO-COLUMN COMPACT TABLE (Supports up to 45 students on 1 single A4 portrait page)
+      const halfCount = Math.ceil(membersCount / 2);
+      const colWidth = 88;
+      const gap = 6;
+      const leftColX = marginX;
+      const rightColX = marginX + colWidth + gap;
+
+      const subBilWidth = 12;
+      const subCheckWidth = 18;
+      const subNameWidth = colWidth - subBilWidth - subCheckWidth;
+
+      const availableTableHeight = 214;
+      const rowHeight = Math.min(9.5, Math.max(7.0, availableTableHeight / (halfCount + 1)));
+
+      const drawSubHeader = (startX: number) => {
+        doc.setFillColor(241, 245, 249);
+        doc.setDrawColor(203, 213, 225);
+        doc.rect(startX, tableStartY, colWidth, rowHeight, 'FD');
+
+        doc.setTextColor(51, 65, 85);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text('BIL', startX + (subBilWidth / 2), tableStartY + (rowHeight / 2) + 2.2, { align: 'center' });
+        doc.text('NAMA MURID', startX + subBilWidth + 3, tableStartY + (rowHeight / 2) + 2.2);
+        doc.text('SEMAKAN', startX + subBilWidth + subNameWidth + (subCheckWidth / 2), tableStartY + (rowHeight / 2) + 2.2, { align: 'center' });
+      };
+
+      drawSubHeader(leftColX);
+      drawSubHeader(rightColX);
+
+      group.members.forEach((member, mIdx) => {
+        const isRightColumn = mIdx >= halfCount;
+        const startX = isRightColumn ? rightColX : leftColX;
+        const rowIndex = isRightColumn ? mIdx - halfCount : mIdx;
+        const rowY = tableStartY + rowHeight + (rowIndex * rowHeight);
+
+        // Alternating fill
+        if (rowIndex % 2 === 0) {
+          doc.setFillColor(255, 255, 255);
+        } else {
+          doc.setFillColor(248, 250, 252);
+        }
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(startX, rowY, colWidth, rowHeight, 'FD');
+
+        // Column lines
+        doc.line(startX + subBilWidth, rowY, startX + subBilWidth, rowY + rowHeight);
+        doc.line(startX + subBilWidth + subNameWidth, rowY, startX + subBilWidth + subNameWidth, rowY + rowHeight);
+
+        // Bil
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(String(mIdx + 1), startX + (subBilWidth / 2), rowY + (rowHeight / 2) + 2.2, { align: 'center' });
+
+        // Name
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        const safeName = doc.splitTextToSize(member.name, subNameWidth - 4)[0] || member.name;
+        doc.text(safeName, startX + subBilWidth + 3, rowY + (rowHeight / 2) + 2.2);
+
+        // Checkbox
+        const boxSize = 3.6;
+        const boxX = startX + subBilWidth + subNameWidth + (subCheckWidth / 2) - (boxSize / 2);
+        const boxY = rowY + (rowHeight / 2) - (boxSize / 2);
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+        doc.rect(boxX, boxY, boxSize, boxSize);
+      });
+    }
+
+    // Bottom Page Footer (Strictly at bottom of A4)
+    const footerY = 281;
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(marginX, footerY, marginX + usableWidth, footerY);
+
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('Susunan Kumpulan Murid  •  Format Cetakan Rasmi', marginX, footerY + 5.5);
+
+    doc.setFont('helvetica', 'italic');
+    doc.text('1 Kumpulan 1 Muka Surat (A4 Potret)', marginX + (usableWidth / 2), footerY + 5.5, { align: 'center' });
+
+    doc.setTextColor(71, 85, 105); // slate-600
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Muka Surat ${groupIndex + 1} daripada ${totalGroups}`, marginX + usableWidth, footerY + 5.5, { align: 'right' });
+  };
+
+  // Download ALL groups into 1 single PDF (strictly 1 group per page, A4 portrait)
+  const handleDownloadAllGroupsPdf = () => {
+    if (groups.length === 0) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      // 1 kumpulan wajib 1 muka surat saiz a4 Dan POTRAIT. Pastikan semua kumpulan ada dalam 1 pdf itu
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      groups.forEach((group, index) => {
+        if (index > 0) {
+          doc.addPage('a4', 'portrait');
+        }
+        renderGroupPage(doc, group, index, groups.length);
+      });
+
+      const timestamp = new Date().toISOString().slice(0, 10);
+      doc.save(`Susunan_Kumpulan_Murid_${groups.length}_Kumpulan_${timestamp}.pdf`);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // Download single group as A4 portrait PDF
+  const handleDownloadSingleGroupPdf = (group: Group, groupIndex: number) => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      renderGroupPage(doc, group, groupIndex, groups.length);
+      const safeName = group.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+      doc.save(`${safeName}_A4_Potret.pdf`);
+    } catch (err) {
+      console.error('Error generating single group PDF:', err);
+    }
+  };
+
   // Inline rename group
   const startRenameGroup = (group: Group) => {
     setEditingGroupId(group.id);
@@ -389,6 +683,20 @@ export default function GroupSorter({
 
             {groups.length > 0 && (
               <>
+                <button
+                  onClick={handleDownloadAllGroupsPdf}
+                  disabled={isGeneratingPdf}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs shadow-emerald-600/20 disabled:opacity-50"
+                  title="Muat turun SEMUA kumpulan ke dalam 1 fail PDF (1 kumpulan 1 muka surat A4 Potret)"
+                >
+                  {isGeneratingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isGeneratingPdf ? 'Menjana PDF...' : 'Muat Turun PDF'}</span>
+                </button>
+
                 <button
                   onClick={handleCopyGroups}
                   className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
@@ -635,6 +943,13 @@ export default function GroupSorter({
                   {/* Card Header Actions & Counter */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      onClick={() => handleDownloadSingleGroupPdf(group, groupIdx)}
+                      className="p-1 hover:bg-white/20 rounded-md text-white transition-colors cursor-pointer"
+                      title="Muat turun PDF untuk kumpulan ini (1 muka surat A4 Potret)"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => handleCopySingleGroup(group)}
                       className="p-1 hover:bg-white/20 rounded-md text-white transition-colors cursor-pointer"
                       title="Salin kumpulan ini sahaja"
@@ -755,11 +1070,27 @@ export default function GroupSorter({
                 className="w-72 sm:w-80 shrink-0 bg-white border-2 border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col"
               >
                 {/* Header */}
-                <div className={`p-3.5 bg-gradient-to-r ${headingGradient} text-white flex items-center justify-between`}>
-                  <h4 className="text-sm font-black tracking-tight truncate">{group.name}</h4>
-                  <span className="text-[11px] font-black bg-white/20 px-2 py-0.5 rounded text-white">
-                    {group.members.length} murid
-                  </span>
+                <div className={`p-3.5 bg-gradient-to-r ${headingGradient} text-white flex items-center justify-between gap-2`}>
+                  <h4 className="text-sm font-black tracking-tight truncate flex-1 min-w-0">{group.name}</h4>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleDownloadSingleGroupPdf(group, groupIdx)}
+                      className="p-1 hover:bg-white/20 rounded-md text-white transition-colors cursor-pointer"
+                      title="Muat turun PDF kumpulan ini (1 muka surat A4 Potret)"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleCopySingleGroup(group)}
+                      className="p-1 hover:bg-white/20 rounded-md text-white transition-colors cursor-pointer"
+                      title="Salin kumpulan ini sahaja"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[11px] font-black bg-white/20 px-2 py-0.5 rounded text-white shadow-2xs">
+                      {group.members.length} murid
+                    </span>
+                  </div>
                 </div>
 
                 {/* Members list */}
@@ -805,6 +1136,7 @@ export default function GroupSorter({
                 <th className="py-3 px-4 w-44">Kumpulan</th>
                 <th className="py-3 px-4 w-28 text-center">Jumlah Murid</th>
                 <th className="py-3 px-4">Senarai Murid</th>
+                <th className="py-3 px-4 w-28 text-center">Tindakan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 text-xs">
@@ -824,6 +1156,25 @@ export default function GroupSorter({
                           <span>{m.name}</span>
                         </span>
                       ))}
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => handleDownloadSingleGroupPdf(group, groupIdx)}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200 transition-colors cursor-pointer"
+                        title="Muat turun PDF kumpulan ini (A4 Potret)"
+                      >
+                        <FileDown className="w-3.5 h-3.5" />
+                        <span>PDF</span>
+                      </button>
+                      <button
+                        onClick={() => handleCopySingleGroup(group)}
+                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Salin nama murid kumpulan ini"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </td>
                 </tr>
